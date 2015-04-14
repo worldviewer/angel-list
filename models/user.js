@@ -31,6 +31,11 @@ module.exports = function (sequelize, DataTypes) {
                 notEmpty: true // validates presence
             }
         }
+
+        // attribute: categories
+
+        // attribute: location
+        // User should be permitted to specify up to 3 locations
     },
     /**** END OF ATTRIBUTES *****/
    
@@ -45,6 +50,10 @@ module.exports = function (sequelize, DataTypes) {
         },
 
         classMethods: {
+
+            associate: function(models) {
+                this.hasMany(models.Category);
+            },
 
             // these belong on the User constructor,
             // eg, db.User.encryptPassword

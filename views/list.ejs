@@ -10,9 +10,15 @@
     <!-- Bootstrap -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
-	<title>List of Companies</title>
+	<title>List of Categories</title>
 </head>
 <body>
-	
+	<h1>List of Categories</h1>
+
+	<ul>
+		<% list.forEach(function(item) { %>
+		<li><%= item.name %>: <%= item.number_of_organizations %></li>
+		<% }) %>
+	</ul>
 </body>
 </html>

@@ -1,3 +1,6 @@
+// Do NOT save to Repo
+var CrunchbaseAPIKey = '054ee27637667c7969ed512eb8ac5d02';
+
 // Load Express router
 var express = require('express');
 
@@ -13,6 +16,28 @@ var pg = require('pg');
 
 // Express Session permits user ID's to be saved into client cookies
 var session = require('express-session');
+
+// env avoids saving API key + secrets to github
+// var env = require('env')();
+
+// env.ok(function(err) {
+//   if (!err) return
+//   console.error(err)
+//   process.exit(1)
+// });
+
+// function handleEnv (err) {
+//   if (!err) return
+//   process.exit(1)
+// }
+
+// var sessionSecret = null;
+// var crunchbaseAPIKey = null;
+
+// if (env.ok(handleEnv)) {
+//     sessionSecret = env.get('SESSION_SECRET');
+//     crunchbaseAPIKey = env.get('CRUNCHBASE_API');
+// }
 
 // Create Express app
 var app = express();
@@ -39,7 +64,8 @@ app.use( methodOverride('_method') );
 app.use(session({
 	// Required option: This is the secret used to sign the 
 	// session ID cookie
-	secret: 'taco',
+	// secret: sessionSecret,
+    secret: 'taco',
 
 	// Forces the session to be saved back to the session 
 	// store, even if the session was never modified during 
@@ -150,20 +176,28 @@ app.post('/login', function(req, res) {
     });
 });
 
+// Provide a form from which locations and company categories
+// can be selected
+app.get('/list', function(req,res) {
+    console.log("GET /list");
+
+//  db.Category.findAll({include: db.User})
+
+    db.Category.all()
+      .then(function(dbCategories) {
+          res.render('list', {list: dbCategories});
+      });
+});
+
+// Accept lists of locations and categories to pay attention to
+app.post('/list', function(req,res) {
+    console.log("POST /list");
+
+    var list = req.body.list
+
+});
+
 // COMPANY ROUTES
-
-// Company Model:
-
-// company name:string
-// location:string
-// categories:integer[]
-// description:text
-// website:string
-// latest funding date:
-// amount of last funding round:
-// recent articles:
-// recent tweets:
-// funding history:
 
 // On successful login, redirect to the user's current
 // list of companies
@@ -211,18 +245,20 @@ app.post('/search', function (req, res) {
 	res.render('search');
 });
 
-app.listen(3000, function() {
-    var msg = "* Listening on Port 3000 *";
+db.sequelize.sync().then(function() {
+    app.listen(3000, function() {
+        var msg = "* Listening on Port 3000 *";
 
-    /*
-     * When the server starts listening, it displays:
-     *
-     *  **************************
-     *  * Listening on Port 3000 *
-     *  **************************
-     *
-    */
-    console.log(Array(msg.length + 1).join("*"));
-    console.log(msg);
-    console.log(Array(msg.length + 1).join("*"));
+        /*
+         * When the server starts listening, it displays:
+         *
+         *  **************************
+         *  * Listening on Port 3000 *
+         *  **************************
+         *
+        */
+        console.log(Array(msg.length + 1).join("*"));
+        console.log(msg);
+        console.log(Array(msg.length + 1).join("*"));
+    });
 });
