@@ -1,5 +1,7 @@
-// Do NOT save to Repo
-var CrunchbaseAPIKey = '054ee27637667c7969ed512eb8ac5d02';
+// Grab the API key and session secret from OS
+var env = process.env;
+var crunchbaseAPIKey = env.CRUNCHBASE_API_KEY;
+var sessionSecret = env.SESSION_SECRET;
 
 // Load Express router
 var express = require('express');
@@ -16,28 +18,6 @@ var pg = require('pg');
 
 // Express Session permits user ID's to be saved into client cookies
 var session = require('express-session');
-
-// env avoids saving API key + secrets to github
-// var env = require('env')();
-
-// env.ok(function(err) {
-//   if (!err) return
-//   console.error(err)
-//   process.exit(1)
-// });
-
-// function handleEnv (err) {
-//   if (!err) return
-//   process.exit(1)
-// }
-
-// var sessionSecret = null;
-// var crunchbaseAPIKey = null;
-
-// if (env.ok(handleEnv)) {
-//     sessionSecret = env.get('SESSION_SECRET');
-//     crunchbaseAPIKey = env.get('CRUNCHBASE_API');
-// }
 
 // Create Express app
 var app = express();
@@ -65,7 +45,7 @@ app.use(session({
 	// Required option: This is the secret used to sign the 
 	// session ID cookie
 	// secret: sessionSecret,
-    secret: 'taco',
+    secret: sessionSecret,
 
 	// Forces the session to be saved back to the session 
 	// store, even if the session was never modified during 
