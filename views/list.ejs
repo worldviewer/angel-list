@@ -13,12 +13,29 @@
 	<title>List of Categories</title>
 </head>
 <body>
-	<h1>List of Categories</h1>
+	<form action="/list" method="POST">
+		<h1>List of Locations:</h1>
 
-	<ul>
-		<% list.forEach(function(item) { %>
-		<li><%= item.name %>: <%= item.number_of_organizations %></li>
-		<% }) %>
-	</ul>
+		<ul>
+			<% locations.forEach(function(spot) { %>
+			<li><%= spot.location_id %></li>
+			<% }) %>
+		</ul>
+		<input type="text" name="location" placeholder="Add Location">
+
+		<h1>List of Categories:</h1>
+
+		<ul>
+			<% categories.forEach(function(category) { %>
+			<li><%= category.name %></li>
+			<% }) %>
+		</ul>
+
+		<input type="text" name="category" placeholder="Add Category">
+
+		<br>
+		<br>
+		<button>Submit</button>
+	</form>
 </body>
 </html>

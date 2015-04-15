@@ -1,7 +1,15 @@
+function debugSQL(sqlObject, property) {
+	for (var obj in sqlObject) {
+		console.log(obj[property]);
+	}
+}
+
 // Grab the API key and session secret from OS
 var env = process.env;
 var crunchbaseAPIKey = env.CRUNCHBASE_API_KEY;
 var sessionSecret = env.SESSION_SECRET;
+
+console.log('sessionSecret='+sessionSecret);
 
 // Load Express router
 var express = require('express');
@@ -82,6 +90,7 @@ app.use('/', function(req, res, next) {
 	    // 
 	    }).then(function(user) {
 	        req.user = user;
+	        console.log("User in currentUser: " + user.email);
 	        return user;
 	    });
 	};
@@ -161,20 +170,82 @@ app.post('/login', function(req, res) {
 app.get('/list', function(req,res) {
     console.log("GET /list");
 
-//  db.Category.findAll({include: db.User})
+   	console.log("req.session.userId: " + req.session.userId);
 
-    db.Category.all()
-      .then(function(dbCategories) {
-          res.render('list', {list: dbCategories});
-      });
+	// Test: Attempt to attach a category to a user
+	// db.UserCategory.create( {user_id: req.session.userId, name: "3D Printing"} )
+	//   	.then(function(result) {
+	//   		console.log("Attempt to attach a category to a user:");
+	//   		console.log(result);
+	// 	});
+
+	// The list page requires db queries for both categories
+	// and locations, so I'll use a promise inside of a
+	// promise, and not render until both have returned:
+	db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
+ 	 		.then(function(dbCategories) {
+ 	 			console.log("Categories for a particular user:")
+				console.log(dbCategories);
+
+				db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
+						.then(function(dbLocations) {
+
+							res.render('list', 
+								{locations: dbLocations,
+								 categories: dbCategories});
+
+						}); // End of Location Promise
+
+	 	 	}); // End of Category Promise
+
+	// Test: Attempt to grab all people for a particular 
+	// category, "3D Printing"
+	// db.UserCategory.findAll( {where: {name: "3D Printing"}} )
+ 	//  		.then(function(dbUsers) {
+ 	//  			console.log("All people for a particular category:");
+ 	//  			console.log(dbUsers);
+ 	//  	});
+
 });
 
 // Accept lists of locations and categories to pay attention to
 app.post('/list', function(req,res) {
     console.log("POST /list");
 
-    var list = req.body.list
+    // Catch new values from form submission
+    var body = req.body;
+    var location = body.location;
+    var category = body.category;
 
+    // If there is a submission, add it to the db for the
+    // current session user
+    if (location) {
+    	// The first step is to convert that location string
+    	// into a location ID with an API call
+    	console.log("POST /list location: " + location);
+
+    	// For now, we will hardcode San Francisco as the
+    	// location.  If time does not permit a better solution,
+    	// I can just stick to the region.
+    	var SFCity = '528f5e3c90d111115d1c2e4ff979d58e';
+    	var SFRegion = 'eb879a83c91a121e0bb8829782dbcf04';
+    	var SFLocation = 'San Francisco Region';
+
+		db.UserLocation.create({user_id: req.session.userId, location_id: SFRegion, name: SFLocation})
+		  	.then(function(dbResult) {
+		  		console.log(dbResult);
+		  	});
+     }
+
+     if (category) {
+    	console.log("POST /list category: " + category);
+ 		db.UserCategory.create({user_id: req.session.userId, name: category})
+	 	  	.then(function(dbResult) {
+	 	  		console.log(dbResult);
+ 	  	});
+     }
+
+     res.send('ok!');
 });
 
 // COMPANY ROUTES

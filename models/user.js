@@ -53,6 +53,7 @@ module.exports = function (sequelize, DataTypes) {
 
             associate: function(models) {
                 this.hasMany(models.Category);
+                this.hasMany(models.Location);
             },
 
             // these belong on the User constructor,
