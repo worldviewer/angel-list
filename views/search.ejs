@@ -25,15 +25,15 @@
 			<ul class="list-group">
 				<% locations.forEach(function(spot) { %>
 					<li class="list-group-item"><%= spot.name %> </li>
-				<% }) %>
+				<% }); %>
 			</ul>
 
 			<h2 class="form-signin-heading">Category Constraints</h2>
 
 			<ul class="list-group">
 				<% categories.forEach(function(category) { %>
-					<li class="list-group-item"><%= category.name %> </li>
-				<% }) %>
+					<li class="list-group-item"><%= category.category_name %> </li>
+				<% }); %>
 			</ul>
 
 			<br>

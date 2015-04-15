@@ -8,7 +8,8 @@ var sessionSecret = env.SESSION_SECRET;
 
 // Set up the base URL for API calls
 var url = "https://api.crunchbase.com/v/2/";
-var key = "?user_key=" + crunchbaseAPIKey;
+var key = "&user_key=" + crunchbaseAPIKey;
+var comma = "%2C";
 
 // Load Express router
 var express = require('express');
@@ -25,6 +26,9 @@ var pg = require('pg');
 
 // Express Session permits user ID's to be saved into client cookies
 var session = require('express-session');
+
+// Use the Request package to do the API call
+var request = require('request');
 
 // Create Express app
 var app = express();
@@ -104,8 +108,10 @@ app.use('/', function(req, res, next) {
 	next();
 });
 
-// If there is a user session, redirect to the user's
-// track list; otherwise, redirect to login
+// LATER:
+// If there is a user session, the default behavior should
+// be to redirect to the user's /list route; otherwise, 
+// redirect to login
 app.get('/', function (req, res) {
 	res.send('Homepage');
 });
@@ -166,8 +172,8 @@ app.post('/login', function(req, res) {
 
 // Provide a form from which locations and company categories
 // can be selected
-app.get('/list', function(req,res) {
-    console.log("GET /list");
+app.get('/user', function(req,res) {
+    console.log("GET /user");
 
    	console.log("req.session.userId: " + req.session.userId);
 
@@ -181,7 +187,7 @@ app.get('/list', function(req,res) {
 				db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
 						.then(function(dbLocations) {
 
-							res.render('list', 
+							res.render('user', 
 								{locations: dbLocations,
 								 categories: dbCategories});
 
@@ -192,8 +198,8 @@ app.get('/list', function(req,res) {
 });
 
 // Accept lists of locations and categories to pay attention to
-app.post('/list', function(req,res) {
-    console.log("POST /list");
+app.post('/user', function(req,res) {
+    console.log("POST /user");
 
     // Catch new values from form submission
     var body = req.body;
@@ -231,7 +237,7 @@ app.post('/list', function(req,res) {
     if (location) {
     	// The first step is to convert that location string
     	// into a location ID with an API call
-    	console.log("POST /list location: " + location);
+    	console.log("POST /user location: " + location);
 
     	// For now, we will hardcode San Francisco as the
     	// location.  If time does not permit a better solution,
@@ -246,51 +252,71 @@ app.post('/list', function(req,res) {
 		  	});
      }
 
+     // If a category is added within the submitted form, then look up all
+     // of the categories' associated data -- namely, the path and uuid --
+     // and then save that into the UserCategory db so that this information
+     // can be quickly accessed at a later point
      if (category) {
-    	console.log("POST /list category: " + category);
- 		db.UserCategory.create({user_id: req.session.userId, name: category})
-	 	  	.then(function(dbResult) {
-	 	  		console.log(dbResult);
- 	  	});
-     }
+    	console.log("POST /user category: " + category);
 
-     res.redirect('/list');
+        // First, look up the category ... For now, select the first match
+        // LATER: PERFORM A FUZZY SEARCH ON THIS DB +
+        // FIX CASE-SENSITIVITY ISSUE (as is, all searches should involve
+        // capitalized words in order to get a match)
+        db.Category.findAll( {where: {name: category}} )
+            .then(function(dbCategories) {
+
+                // For now, if the query does not return anything, then
+                // just go back to the /user page
+                // LATER: TELL USER NO MATCH
+                if (!dbCategories) {
+                    console.log("No category of this name was found!");
+                    res.redirect('/user');
+                }
+
+                console.log(dbCategories);
+
+                // For now, just check for exact textual equivalence
+                var dbCategory = null;
+                console.log("curCategory:");
+                dbCategories.forEach(function(curCategory) {
+                    // console.log(curCategory);
+                    if (curCategory.name.toUpperCase() ===
+                        category.toUpperCase()) {
+                        dbCategory = curCategory;
+                    }
+                });
+
+                if (dbCategory) {
+
+                    // If that happens, then create the new category for 
+                    // a specific user
+                    db.UserCategory.create({user_id: req.session.userId, category_name: dbCategory.name, 
+                        category_path: dbCategory.path,
+                        category_uuid: dbCategory.uuid})
+                        .then(function(dbResult) {
+                            console.log(dbResult);
+                            res.redirect('/user');
+                    });
+
+                } else {
+                    console.log("No category of this name was found!");
+                    res.redirect('/user');
+                }
+            }); // End of db.Category promise
+     } // End of category submission
+
+     // If the page hasn't been redirected by now, then do it
+     // WARNING: THIS CREATES A SITUATION WHERE THE PAGE DOES NOT
+     // PROPERLY UPDATE AFTER ALL CHANGES HAVE BEEN MADE ... GOING
+     // TO MOVE ON FOR NOW ...
+     res.redirect('/user');
 });
 
-app.get('/list/:type/:id', function(req,res) {
-    console.log("DELETE /list");
+// COMPANY ROUTES: THIS IS NOT A NECESSARY FEATURE FOR MVP
 
-    var type = req.params.type;
-    var id = req.params.id;
-    var body = req.body;
-
-    // Delete the location designated by id
-    if (type === "loc") {
-
-        db.UserLocation.delete(id)
-            .then(function(dbResult) {
-                console.log(dbResult);
-            });
-
-    // Delete the category designated by id
-    } else if (type === "cat") {
-
-        db.UserCategory.delete(id)
-            .then(function(dbResult) {
-                console.log(dbResult);
-            });
-
-    } else {
-        console.log('Something went wrong ...');
-    }
-
-    res.redirect('/list');
-});
-
-// COMPANY ROUTES
-
-// On successful login, redirect to the user's current
-// list of companies
+// User should be able to maintain a particular list of companies
+// to track over time
 app.get('/companies', function (req, res) {
 	req.currentUser().then(function(user) {
 		res.send("User: " + user.email);
@@ -348,10 +374,110 @@ app.get('/search', function (req, res) {
 // This is where the CrunchBase API call goes; should
 // re-render the search page to show search results
 app.post('/search', function (req, res) {
-	// Call to API here ...
+    // Grab values from POST
+    var body = req.body;
 
-	// render with API results ...
-	res.render('search');
+    // Grab user-defined locations from UserLocations
+    db.UserLocation.all()
+        .then(function(dbLocations) {
+
+            // Grab user-defined categories from UserCategories
+            db.UserCategory.all()
+                .then(function(dbCategories) {
+
+                    // Sample API call:
+                    // https://api.crunchbase.com/v/2/organizations?location_uuids=eb879a83c91a121e0bb8829782dbcf04&category_uuids=ae8f68d29319f2c235494f1ac2851660&user_key=054ee27637667c7969ed512eb8ac5d02&page=1
+
+                	// Build the API call:
+
+                    // For Reference:
+                    // var url = "https://api.crunchbase.com/v/2/";
+                    // var key = "?user_key=" + crunchbaseAPIKey;
+                    // var comma = "%2C";
+
+                    // 3D Printing UUID:
+                    // ae8f68d29319f2c235494f1ac2851660
+                    // 3D UUID:
+                    // 2e43393be05e1e660538c576d1a5c26b
+
+                    // SF Region location UUID:
+                    var SanFrancisco = "eb879a83c91a121e0bb8829782dbcf04";
+
+                    // Add in query parameter question mark after /organizations
+                    // route under all circumstances
+                    var APICall = url + "organizations?";
+
+                    // LATER: USE REQUEST() TO CALL THE API
+                    // var options = {
+                    //   url: APICall,
+                    //   headers: {
+                    //     'location_uuids': 'request'
+                    //   }
+                    // };
+                     
+                    // function callback(error, response, body) {
+                    //   if (!error && response.statusCode == 200) {
+                    //     var info = JSON.parse(body);
+                    //     console.log(info.stargazers_count + " Stars");
+                    //     console.log(info.forks_count + " Forks");
+                    //   }
+                    // }
+                    // request(options, callback);
+
+                    // For now, assume location is San Francisco region
+                    // LATER: EXPAND ABILITY TO SELECT OTHER REGIONS
+                    if (dbLocations.length > 0) {
+                        APICall += "location_uuids=" + SanFrancisco;
+                    }
+
+                    if (dbCategories.length > 0) {
+                        APICall += "&category_uuids=";
+
+                        dbCategories.forEach(function(dbCategory) {
+                            APICall += dbCategory.category_uuid + comma;
+                        });
+
+                        // APICall += dbCategories.reduce(function(prev,cur,index,arr) {
+                        //     return prev.name + comma + cur.name;
+                        // }, "&category_uuids=");
+                    }
+
+                    // Remove the last comma (%2C)
+                    APICall = APICall.slice(0,APICall.length-3);
+
+                    APICall += key;
+
+                    console.log(APICall);
+
+                    var APIResponse = null;
+                    request(APICall, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            console.log("body:");
+                            console.log(body);
+
+                            // LATER: CHECK TO SEE IF THERE ARE MULTIPLE PAGES TO THE
+                            // RESPONSE, AND CREATE ADDITIONAL REQUESTS TO CAPTURE
+                            // THAT DATA IF SO
+
+                            APIResponse = JSON.parse(body);
+
+                            // Testing to see if I can pick out an individual item
+                            console.log("body.data.items[0]:");
+                            console.log(APIResponse.data.items[0]);
+
+                            // Now, render the /list route with this JSON object
+                            res.render('list', {companies: APIResponse.data.items, metadata: APIResponse.metadata});
+
+                        } else {
+
+                        }
+                    });
+
+                	// render with API results ...
+                	// res.render('companies', {});
+
+            }); // End of UserCategory promise
+    }); // End of UserLocation promise
 });
 
 db.sequelize.sync().then(function() {
