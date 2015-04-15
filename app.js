@@ -207,7 +207,6 @@ app.post('/user', function(req,res) {
     var category = body.category;
 
     // Handle location deletions
-    // Assume maximum of 10 locations
     for(var i=1; i<11; i++) {
         if (body.hasOwnProperty('spot_'+i)) {
 
@@ -220,7 +219,6 @@ app.post('/user', function(req,res) {
     }
 
     // Handle category deletions
-    // Assume maximum of 100 locations
     for(var i=1; i<101; i++) {
         if (body.hasOwnProperty('cat_'+i)) {
 
