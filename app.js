@@ -1,3 +1,6 @@
+// https://angel-alert.herokuapp.com/
+// https://git.heroku.com/angel-alert.git
+
 // Grab the API key and session secret from OS
 var env = process.env;
 var crunchbaseAPIKey = env.CRUNCHBASE_API_KEY;
@@ -352,7 +355,7 @@ app.post('/search', function (req, res) {
 });
 
 db.sequelize.sync().then(function() {
-    app.listen(3000, function() {
+    app.listen(process.env.PORT || 3000, function() {
         var msg = "* Listening on Port 3000 *";
 
         /*
