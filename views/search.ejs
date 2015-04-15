@@ -10,9 +10,43 @@
     <!-- Bootstrap -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
-	<title>Search Companies</title>
+    <!-- Custom styles for this template -->
+    <link href="signin.css" rel="stylesheet">
+
+	<title>Angel Search</title>
 </head>
 <body>
-	<h1>Search Companies</h1>
+
+	<div class="container">
+
+		<form class="form-signin" action="/search" method="POST">
+			<h2 class="form-signin-heading">Location Constraints</h2>
+
+			<ul class="list-group">
+				<% locations.forEach(function(spot) { %>
+					<li class="list-group-item"><%= spot.name %> </li>
+				<% }) %>
+			</ul>
+
+			<h2 class="form-signin-heading">Category Constraints</h2>
+
+			<ul class="list-group">
+				<% categories.forEach(function(category) { %>
+					<li class="list-group-item"><%= category.name %> </li>
+				<% }) %>
+			</ul>
+
+			<br>
+
+			<h2 class="form-signin-heading">Filter by Funding Stage</h2>
+
+			<h2 class="form-signin-heading">Filter by Funding</h2>
+
+			<button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+
+		</form>
+
+    </div> <!-- /container -->
+
 </body>
 </html>

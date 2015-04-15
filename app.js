@@ -1,15 +1,11 @@
-function debugSQL(sqlObject, property) {
-	for (var obj in sqlObject) {
-		console.log(obj[property]);
-	}
-}
-
 // Grab the API key and session secret from OS
 var env = process.env;
 var crunchbaseAPIKey = env.CRUNCHBASE_API_KEY;
 var sessionSecret = env.SESSION_SECRET;
 
-console.log('sessionSecret='+sessionSecret);
+// Set up the base URL for API calls
+var url = "https://api.crunchbase.com/v/2/";
+var key = "?user_key=" + crunchbaseAPIKey;
 
 // Load Express router
 var express = require('express');
@@ -153,7 +149,7 @@ app.post('/login', function(req, res) {
         if (User) {
             console.log('User ' + User.email + ' authenticated!');
             req.login(User);
-            res.redirect('/companies');
+            res.redirect('/search');
 
         // Our error handling on authentication is very
         // minimal at this point, so if authentication does
@@ -172,20 +168,12 @@ app.get('/list', function(req,res) {
 
    	console.log("req.session.userId: " + req.session.userId);
 
-	// Test: Attempt to attach a category to a user
-	// db.UserCategory.create( {user_id: req.session.userId, name: "3D Printing"} )
-	//   	.then(function(result) {
-	//   		console.log("Attempt to attach a category to a user:");
-	//   		console.log(result);
-	// 	});
-
-	// The list page requires db queries for both categories
 	// and locations, so I'll use a promise inside of a
 	// promise, and not render until both have returned:
 	db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
  	 		.then(function(dbCategories) {
  	 			console.log("Categories for a particular user:")
-				console.log(dbCategories);
+                console.log(dbCategories);
 
 				db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
 						.then(function(dbLocations) {
@@ -198,14 +186,6 @@ app.get('/list', function(req,res) {
 
 	 	 	}); // End of Category Promise
 
-	// Test: Attempt to grab all people for a particular 
-	// category, "3D Printing"
-	// db.UserCategory.findAll( {where: {name: "3D Printing"}} )
- 	//  		.then(function(dbUsers) {
- 	//  			console.log("All people for a particular category:");
- 	//  			console.log(dbUsers);
- 	//  	});
-
 });
 
 // Accept lists of locations and categories to pay attention to
@@ -216,6 +196,32 @@ app.post('/list', function(req,res) {
     var body = req.body;
     var location = body.location;
     var category = body.category;
+
+    // Handle location deletions
+    // Assume maximum of 10 locations
+    for(var i=1; i<11; i++) {
+        if (body.hasOwnProperty('spot_'+i)) {
+
+            db.UserLocation.destroy({where: {id: i}})
+                .then(function(dbResult) {
+                    console.log(dbResult);
+                });
+
+        }
+    }
+
+    // Handle category deletions
+    // Assume maximum of 100 locations
+    for(var i=1; i<101; i++) {
+        if (body.hasOwnProperty('cat_'+i)) {
+
+            db.UserCategory.destroy({where: {id: i}})
+                .then(function(dbResult) {
+                    console.log(dbResult);
+                });
+
+        }
+    }
 
     // If there is a submission, add it to the db for the
     // current session user
@@ -245,7 +251,37 @@ app.post('/list', function(req,res) {
  	  	});
      }
 
-     res.send('ok!');
+     res.redirect('/list');
+});
+
+app.get('/list/:type/:id', function(req,res) {
+    console.log("DELETE /list");
+
+    var type = req.params.type;
+    var id = req.params.id;
+    var body = req.body;
+
+    // Delete the location designated by id
+    if (type === "loc") {
+
+        db.UserLocation.delete(id)
+            .then(function(dbResult) {
+                console.log(dbResult);
+            });
+
+    // Delete the category designated by id
+    } else if (type === "cat") {
+
+        db.UserCategory.delete(id)
+            .then(function(dbResult) {
+                console.log(dbResult);
+            });
+
+    } else {
+        console.log('Something went wrong ...');
+    }
+
+    res.redirect('/list');
 });
 
 // COMPANY ROUTES
@@ -284,7 +320,26 @@ app.delete('/company/:id', function (req, res) {
 // Brings up search page, from which the user can spawn
 // a call to the CrunchBase API
 app.get('/search', function (req, res) {
-	res.render('search');
+
+    // The search page requires db queries for both categories
+    // and locations, so I'll use a promise inside of a
+    // promise, and not render until both have returned:
+    db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
+            .then(function(dbCategories) {
+                console.log("Categories for a particular user:")
+                console.log(dbCategories);
+
+                db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
+                        .then(function(dbLocations) {
+
+                            res.render('search', 
+                                {locations: dbLocations,
+                                 categories: dbCategories});
+
+                        }); // End of Location Promise
+
+            }); // End of Category Promise
+
 });
 
 // This is where the CrunchBase API call goes; should

@@ -10,32 +10,63 @@
     <!-- Bootstrap -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
-	<title>List of Categories</title>
+    <!-- Custom styles for this template -->
+    <link href="signin.css" rel="stylesheet">
+
+	<title>List of Categories and Locations</title>
 </head>
 <body>
-	<form action="/list" method="POST">
-		<h1>List of Locations:</h1>
 
-		<ul>
-			<% locations.forEach(function(spot) { %>
-			<li><%= spot.location_id %></li>
-			<% }) %>
-		</ul>
-		<input type="text" name="location" placeholder="Add Location">
+	<div class="container">
 
-		<h1>List of Categories:</h1>
+		<form class="form-signin" action="/list" method="POST">
+			<h2 class="form-signin-heading">I want to work in ...</h2>
 
-		<ul>
-			<% categories.forEach(function(category) { %>
-			<li><%= category.name %></li>
-			<% }) %>
-		</ul>
+			<ul class="list-group">
+				<% locations.forEach(function(spot) { %>
+				<div class="row">
+					<div class="input-group">
+						<span class="input-group-addon">
+        					<input type="checkbox" id="spot_<%= spot.id %>" name="spot_<%= spot.id %>">
+        					<label for="spot_<%= spot.id %>"><span class="glyphicon glyphicon-remove-circle"></span></label>
+						</span>				
+						<li class="list-group-item"><%= spot.name %> </li>
+					</div>
+				</div>
+				<% }) %>
+			</ul>
 
-		<input type="text" name="category" placeholder="Add Category">
+			<div class="row">
+				<input class="form-control" type="text" name="location" placeholder="Add Location">
+			</div>
 
-		<br>
-		<br>
-		<button>Submit</button>
-	</form>
+			<h2 class="form-signin-heading">Search categories ...</h2>
+
+			<ul class="list-group">
+				<% categories.forEach(function(category) { %>
+				<div class="row">
+					<div class="input-group">
+						<span class="input-group-addon">
+        					<input type="checkbox" id="cat_<%= category.id %>" name="cat_<%= category.id %>">
+        					<label for="cat_<%= category.id %>"><span class="glyphicon glyphicon-remove-circle"></span></label>
+						</span>				
+						<li class="list-group-item"><%= category.name %> </li>
+					</div>
+				</div>
+				<% }) %>
+			</ul>
+
+			<div class="row">
+				<input class="form-control" type="text" name="category" placeholder="Add Category">
+			</div>
+
+			<br>
+			<div class="row">
+				<button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+			</div>
+		</form>
+
+    </div> <!-- /container -->
+
 </body>
 </html>

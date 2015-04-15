@@ -51,10 +51,10 @@ module.exports = function (sequelize, DataTypes) {
 
         classMethods: {
 
-            associate: function(models) {
-                this.hasMany(models.Category);
-                this.hasMany(models.Location);
-            },
+            // associate: function(models) {
+            //     this.hasMany(models.Category);
+            //     this.hasMany(models.Location);
+            // },
 
             // these belong on the User constructor,
             // eg, db.User.encryptPassword
