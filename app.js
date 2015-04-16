@@ -114,7 +114,7 @@ app.use('/', function(req, res, next) {
 // redirect to login
 app.get('/', function (req, res) {
 	if (req.session.userId) {
-        res.redirect('/list');
+        res.redirect('/search');
     } else { // Check for session
         res.redirect('/login');
     }
@@ -175,44 +175,13 @@ app.post('/login', function(req, res) {
     });
 });
 
-// Provide a form from which locations and company categories
-// can be selected
-app.get('/user', function(req,res) {
-    if (req.session.userId) {
-
-        console.log("GET /user");
-       	console.log("req.session.userId: " + req.session.userId);
-
-    	// and locations, so I'll use a promise inside of a
-    	// promise, and not render until both have returned:
-    	db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
-   	 		.then(function(dbCategories) {
- 	 			console.log("Categories for a particular user:")
-                console.log(dbCategories);
-
-				db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
-						.then(function(dbLocations) {
-
-							res.render('user', 
-								{locations: dbLocations,
-								 categories: dbCategories});
-
-						}); // End of Location Promise
-
-	 	 	}); // End of Category Promise
-
-    } else { // Checking for session
-        res.redirect('/login');
-    }
-});
-
 // Form for adding categories
 app.get('/categories', function(req,res) {
     if (req.session.userId) {
 
         db.UserCategory.all()
             .then(function(dbCategories) {
-                res.render('categories', {categories: dbCategories});
+                res.render('categories', {categories: dbCategories, error: null});
             });
 
     } else { // Checking for session
@@ -227,54 +196,80 @@ app.post('/categories', function(req,res) {
     var category = body.category;
 
 
-     // If a category is added within the submitted form, then look up all
-     // of the categories' associated data -- namely, the path and uuid --
-     // and then save that into the UserCategory db so that this information
-     // can be quickly accessed at a later point
-     if (category) {
+    // If a category is added within the submitted form, then look up all
+    // of the categories' associated data -- namely, the path and uuid --
+    // and then save that into the UserCategory db so that this information
+    // can be quickly accessed at a later point
+    if (category) {
         console.log("POST /categories: " + category);
 
-        // First, look up the category ...
-        db.Category.findAll( {where: {name: category}} )
+        // First check to see if the user already has this category
+        db.UserCategory.all()
             .then(function(dbCategories) {
+                var unique = true;
+                dbCategories.forEach(function(dbCategory) {
 
-                // if (!dbCategories) {
-                //     console.log("No category of this name was found!");
-                //     res.redirect('/user');
-                // }
-
-                console.log(dbCategories);
-
-                // For now, just check for exact textual equivalence
-                var dbCategory = null;
-                console.log("curCategory:");
-                dbCategories.forEach(function(curCategory) {
-                    // console.log(curCategory);
-                    if (curCategory.name.toUpperCase() ===
-                        category.toUpperCase()) {
-                        dbCategory = curCategory;
+                    // When the category already exists, send an error message
+                    if (category === dbCategory.category_name) {
+                        unique = false;
                     }
                 });
 
-                if (dbCategory) {
+                // Category already exists, render w/ error message
+                if (!unique) {
+                    var msg = "Category is already on the list.";
+                    res.render('categories', {categories: dbCategories, error: msg});
 
-                    // If that happens, then create the new category for 
-                    // a specific user
-                    db.UserCategory.create({user_id: req.session.userId,
-                        category_name: dbCategory.name, 
-                        category_path: dbCategory.path,
-                        category_uuid: dbCategory.uuid})
-                        .then(function(dbResult) {
-                            console.log(dbResult);
-                            res.redirect('/user');
-                    });
-
+                // Category does not yet exist for user
                 } else {
-                    console.log("No category of this name was found!");
-                    res.redirect('/user');
-                }
-            }); // End of db.Category promise
-     } // End of category submission
+
+                    // Look up the category ...
+                    db.Category.findAll( {where: {name: category}} )
+                        .then(function(dbCategories) {
+
+                            // Constraints on category input obsolete the need for this:
+                            // if (!dbCategories) {
+                            //     console.log("No category of this name was found!");
+                            //     res.redirect('/user');
+                            // }
+
+                            console.log(dbCategories);
+
+                            // For now, just check for exact textual equivalence
+                            var dbCategory = null;
+                            console.log("curCategory:");
+                            dbCategories.forEach(function(curCategory) {
+                                // console.log(curCategory);
+                                if (curCategory.name.toUpperCase() ===
+                                    category.toUpperCase()) {
+                                    dbCategory = curCategory;
+                                }
+                            });
+
+                            if (dbCategory) {
+
+                                // If that happens, then create the new category for 
+                                // a specific user
+                                db.UserCategory.create({user_id: req.session.userId,
+                                    category_name: dbCategory.name, 
+                                    category_path: dbCategory.path,
+                                    category_uuid: dbCategory.uuid})
+                                    .then(function(dbResult) {
+                                        console.log(dbResult);
+                                        res.redirect('/categories');
+                                });
+
+                            } else {
+                                console.log("No category of this name was found!");
+                                res.redirect('/categories');
+                            }
+                        }); // End of db.Category promise
+
+                } // End of check for uniqueness
+
+            }); // End of promise to see if category already exists for user
+
+        } // End of check on if a category was sent
 
 });
 
@@ -284,7 +279,7 @@ app.get('/locations', function(req,res) {
 
         db.UserLocation.all()
             .then(function(dbLocations) {
-                res.render('locations', {locations: dbLocations});
+                res.render('locations', {locations: dbLocations, error: null});
             });
 
     } else { // Checking for session
@@ -305,84 +300,72 @@ app.post('/locations', function(req,res) {
         // into a location ID with an API call
         console.log("POST /location: " + location);
 
-        // For now, we will hardcode San Francisco as the
-        // location.  If time does not permit a better solution,
-        // I can just stick to the region.
-        var SFCity = '528f5e3c90d111115d1c2e4ff979d58e';
-        var SFRegion = 'eb879a83c91a121e0bb8829782dbcf04';
-        var SFLocation = 'San Francisco Region';
+       // Then check to see if the user already has this location
+        db.UserLocation.all()
+            .then(function(dbLocations) {
+                var unique = true;
+                dbLocations.forEach(function(dbLocation) {
 
-        db.UserLocation.create({user_id: req.session.userId, location_id: SFRegion, name: SFLocation})
-            .then(function(dbResult) {
-                console.log(dbResult);
-            });
-     }
+                    // When the location already exists, send an error message
+                    if (location === dbLocation.name) {
+                        unique = false;
+                    }
+                });
+
+                // Location already exists, render w/ error message
+                if (!unique) {
+                    var msg = "Location is already on the list.";
+                    res.render('locations', {locations: dbLocations, error: msg});
+
+                // Location does not yet exist for user
+                } else {
+
+                    // For now, we will hardcode San Francisco as the
+                    // location.  If time does not permit a better solution,
+                    // I can just stick to the region.
+                    var SFCity = '528f5e3c90d111115d1c2e4ff979d58e';
+                    var SFRegion = 'eb879a83c91a121e0bb8829782dbcf04';
+                    var SFLocation = 'San Francisco Region';
+
+                    db.UserLocation.create({user_id: req.session.userId, 
+                        location_id: SFRegion, name: SFLocation})
+                        .then(function(dbResult) {
+                            console.log(dbResult);
+                            res.redirect('/locations');
+                        });
+
+                 } // End of check for uniqueness
+
+            }); // End of promise on duplicate check
+
+    } // End of check to see if location was submitted
 
 });
 
-// dbDestroy receives either a redirectTo or a callback
-function dbDestroy(database, idArray, redirectTo, callback) {
+// Delete just one category at a time; far simpler than
+// checkboxes, and fewer clicks too!
+app.delete('/categories/:id', function(req,res) {
+    // Grab the id from the URL parameters
+    var deleteId = req.params.id;
 
-    // If there is something to delete
-    if(idArray.length > 0) {
-        database.destroy({where: {id: idArray}})
-            .then(function(dbResult) {
-                console.log(dbResult);
+    db.UserCategory.destroy({where: {id: deleteId}})
+        .then(function(dbResponse) {
+            console.log(dbResponse);
+            res.redirect('/categories');
+        });
+});
 
-                // If a redirect is given
-                if (redirectTo) {
-                    res.redirect(redirectTo);
-                } else if (callback) {
-                    callback();
-                }
-            });
-    }
+// Delete just one category at a time; far simpler than
+// checkboxes, and fewer clicks too!
+app.delete('/locations/:id', function(req,res) {
+    // Grab the id from the URL parameters
+    var deleteId = req.params.id;
 
-}
-
-// Process deletions for either categories or locations
-app.delete('/user', function(req,res) {
-
-    // Catch new values from form submission
-    var body = req.body;
-
-    var locationDeletions = [];
-    var categoryDeletions = [];
-
-    // Identify location & category deletions
-    for(var i=1; i<101; i++) {
-        if (body.hasOwnProperty('spot_'+i)) {
-            locationDeletions.push(i);
-        }
-        if (body.hasOwnProperty('cat_'+i)) {
-            categoryDeletions.push(i);
-        }
-    }
-
-    // This is awkward, but I don't see any better way to avoid creating
-    // two separate deletion pages, which seems to me to be adapting
-    // the design to the programming language ...
-
-    // If there is a deletion in both, then check one at a time, so that
-    // we don't have to create two competing promises
-    if((locationDeletions.length > 0) && (categoryDeletions.length > 0)) {
-
-        // Since we are operating on two different db's, we have
-        // to nest the call to the 2nd inside the return of the 1st
-        dbDestroy(db.UserLocations, locationDeletions, null, 
-                dbDestroy(db.UserCategories, categoryDeletions, '/user'));
-
-    // If just location deletions
-    } else if (locationDeletions.length > 0) {
-        dbDestroy(db.UserLocations, locationDeletions, '/user')
-        res.redirect(redirectTo);
-
-    // If just category deltions
-    } else if (categoryDeletions.length > 0) {
-        dbDestroy(db.UserCategories, categoryDeletions, '/user')
-        res.redirect(redirectTo);
-
-    }
+    db.UserLocation.destroy({where: {id: deleteId}})
+        .then(function(dbResponse) {
+            console.log(dbResponse);
+            res.redirect('/locations');
+        });
 });
 
 // COMPANY ROUTES: THIS IS NOT A NECESSARY FEATURE FOR MVP

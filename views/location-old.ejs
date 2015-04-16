@@ -48,16 +48,15 @@
     <!-- My own jQuery for this page -->
     <script src="index.js"></script>
 
-	<title>Preferred Search Categories</title>
+	<title>Preferred Search Locations</title>
+	<!-- LATER: ADD IN EXPLICIT COMPANY SEARCHES -->
 </head>
 <body>
 
 	<div class="container">
 
-		<div class="form-signin">
-
 			<div class="row">
-				<h2 class="form-signin-heading">Always Search Categories:</h2>
+				<h2 class="form-signin-heading">Always Search Locations:</h2>
 			</div>
 
 			<div class="alert alert-success row" role="alert">
@@ -65,41 +64,37 @@
 			     Searches are case-sensitive.</p>
 			</div>
 
-			<ul class="list-group">
-				<% categories.forEach(function(category) { %>
+			<ul class="list-group delete form-signin-heading">
+				<% locations.forEach(function(location) { %>
 				<div class="row">
-					<div class="input-group">
-						<span class="input-group-addon">
 
-							<form method="POST" 
-								action="/categories/<%= category.id %>?_method=DELETE">
+					<div class="input-group">
+					<span class="input-group-addon">
+
+						<li class="list-group-item form-signin-heading">
+							<form class="form-signin" method="POST" 
+								action="/locations/<%= location.id %>?_method=DELETE" 
+								id="form<%= location.id %>">
 								
 								<button>Delete</button>
-							</form>
-
-						</span>
-
-						<li class="list-group-item">
-							<%= category.category_name %>
+							</form><%= location.name %>
 						</li>
-
+						
 					</div>
+
 				</div>
 				<% }) %>
 			</ul>
 
-		</div>
-
-		<form class="form-signin delete" action="/categories" method="POST">
-
+		<form class="form-signin" action="/locations" method="POST">
 			<div class="row">
 				<!-- Typeahead HTML -->
 			    <div class="typeahead-container">
 			    	<div class="input group">
 
 			            <span class="typeahead-query">
-			                <input id="category-search" name="category" type="search" 
-			                	class="form-control" placeholder="Track Additional Categories" 
+			                <input id="location-search" name="location" type="search" 
+			                	class="form-control" placeholder="Track Additional Locations" 
 			                	autocomplete="off">
 			            </span>
 
@@ -115,16 +110,17 @@
 			</div>
 		</form>
 
-       <% if(error) { %>
-        <div class="form-signin">
-        	<div class="row">
-	        	<div id="login-error" class="alert alert-danger" 
-    	    		role="alert"><%= error %></div>
-    	    </div>
-        </div>
-        <% } %>
-
     </div> <!-- /container -->
+
+<script>
+
+$(document).ready( function() {
+	function submitForm() {
+	    $('#form').submit();
+	}
+});
+
+</script>
 
 </body>
 </html>

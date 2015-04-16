@@ -49,35 +49,50 @@
     <script src="index.js"></script>
 
 	<title>Preferred Search Locations</title>
-	<!-- LATER: ADD IN EXPLICIT COMPANY SEARCHES -->
 </head>
 <body>
 
 	<div class="container">
 
-		<form class="form-signin" action="/locations" method="POST">
-			<h2 class="form-signin-heading">Always Search Locations:</h2>
-			<p class="form-signin-heading">The locations selected here will
-			be applied to all of your searches.</p>
+		<div class="form-signin">
+
+			<div class="row">
+				<h2 class="form-signin-heading">Always Search Locations:</h2>
+			</div>
+
+			<div class="alert alert-success row" role="alert">
+			  <p>The locations selected here will be applied to all of your searches.
+			     Searches are case-sensitive.</p>
+			</div>
 
 			<ul class="list-group">
 				<% locations.forEach(function(location) { %>
 				<div class="row">
 					<div class="input-group">
 						<span class="input-group-addon">
-        					<input type="checkbox" id="loc_<%= location.id %>" 
-        						name="loc_<%= location.id %>">
-        					<label for="loc_<%= location.id %>"><span 
-        						class="glyphicon glyphicon-remove-circle"></span></label>
-						</span>				
-						<li class="list-group-item"><%= location.name %> </li>
+
+							<form method="POST" 
+								action="/locations/<%= location.id %>?_method=DELETE">
+								
+								<button>Delete</button>
+							</form>
+
+						</span>
+
+						<li class="list-group-item">
+							<%= location.name %>
+						</li>
+
 					</div>
 				</div>
 				<% }) %>
 			</ul>
 
-			<div class="row">
+		</div>
 
+		<form class="form-signin delete" action="/locations" method="POST">
+
+			<div class="row">
 				<!-- Typeahead HTML -->
 			    <div class="typeahead-container">
 			    	<div class="input group">
@@ -90,15 +105,24 @@
 
 			        </div>
 			    </div>
-
 			</div>
 
 			<br>
+
 			<div class="row">
 				<button class="btn btn-lg btn-primary btn-block" class="typeahead-button" 
 					type="submit">Submit Changes</button>
 			</div>
 		</form>
+
+       <% if(error) { %>
+        <div class="form-signin">
+        	<div class="row">
+	        	<div id="login-error" class="alert alert-danger" 
+    	    		role="alert"><%= error %></div>
+    	    </div>
+        </div>
+        <% } %>
 
     </div> <!-- /container -->
 

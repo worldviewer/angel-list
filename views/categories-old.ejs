@@ -49,13 +49,13 @@
     <script src="index.js"></script>
 
 	<title>Preferred Search Categories</title>
+	<!-- LATER: ADD IN EXPLICIT COMPANY SEARCHES -->
 </head>
 <body>
 
 	<div class="container">
 
-		<div class="form-signin">
-
+		<form class="form-signin" action="/categories" method="POST">
 			<div class="row">
 				<h2 class="form-signin-heading">Always Search Categories:</h2>
 			</div>
@@ -64,33 +64,6 @@
 			  <p>The categories selected here will be applied to all of your searches.
 			     Searches are case-sensitive.</p>
 			</div>
-
-			<ul class="list-group">
-				<% categories.forEach(function(category) { %>
-				<div class="row">
-					<div class="input-group">
-						<span class="input-group-addon">
-
-							<form method="POST" 
-								action="/categories/<%= category.id %>?_method=DELETE">
-								
-								<button>Delete</button>
-							</form>
-
-						</span>
-
-						<li class="list-group-item">
-							<%= category.category_name %>
-						</li>
-
-					</div>
-				</div>
-				<% }) %>
-			</ul>
-
-		</div>
-
-		<form class="form-signin delete" action="/categories" method="POST">
 
 			<div class="row">
 				<!-- Typeahead HTML -->
@@ -109,20 +82,27 @@
 
 			<br>
 
+			<ul class="list-group">
+				<% categories.forEach(function(category) { %>
+				<div class="row">
+					<div class="input-group">
+						<span class="input-group-addon">
+        					<input type="checkbox" id="cat_<%= category.id %>" 
+        						name="cat_<%= category.id %>">
+        					<label for="cat_<%= category.id %>"><span 
+        						class="glyphicon glyphicon-remove-circle"></span></label>
+						</span>				
+						<li class="list-group-item"><%= category.category_name %> </li>
+					</div>
+				</div>
+				<% }) %>
+			</ul>
+
 			<div class="row">
 				<button class="btn btn-lg btn-primary btn-block" class="typeahead-button" 
 					type="submit">Submit Changes</button>
 			</div>
 		</form>
-
-       <% if(error) { %>
-        <div class="form-signin">
-        	<div class="row">
-	        	<div id="login-error" class="alert alert-danger" 
-    	    		role="alert"><%= error %></div>
-    	    </div>
-        </div>
-        <% } %>
 
     </div> <!-- /container -->
 

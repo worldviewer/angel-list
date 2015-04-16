@@ -69,3 +69,11 @@ body {
   text-align: center;
   margin-top: 10px;
 }
+
+.delete form {
+  display: inline;
+}
+
+.delete {
+  list-style-type: none;
+}
