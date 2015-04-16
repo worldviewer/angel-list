@@ -357,7 +357,7 @@ app.delete('/user', function(req,res) {
     // This is awkward, but I don't see any better way to avoid creating
     // two separate deletion pages, which seems to me to be adapting
     // the design to the programming language ...
-    
+
     // If there is a deletion in both, then check one at a time, so that
     // we don't have to create two competing promises
     if((locationDeletions.length > 0) && (categoryDeletions.length > 0)) {
@@ -365,8 +365,7 @@ app.delete('/user', function(req,res) {
         // Since we are operating on two different db's, we have
         // to nest the call to the 2nd inside the return of the 1st
         dbDestroy(db.UserLocations, locationDeletions, null, 
-                dbDestroy(db.UserCategories, categoryDeletions, '/user');
-            );
+                dbDestroy(db.UserCategories, categoryDeletions, '/user'));
 
     // If just location deletions
     } else if (locationDeletions.length > 0) {
