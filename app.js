@@ -207,10 +207,13 @@ app.get('/user', function(req,res) {
 });
 
 // Form for adding categories
-app.get('/user/category', function(req,res) {
+app.get('/categories', function(req,res) {
     if (req.session.userId) {
 
-
+        db.UserCategory.all()
+            .then(function(dbCategories) {
+                res.render('categories', {categories: dbCategories});
+            });
 
     } else { // Checking for session
         res.redirect('/login');
@@ -218,7 +221,7 @@ app.get('/user/category', function(req,res) {
 });
 
 // Submission of changes to categories
-app.post('/user/category', function(req,res) {
+app.post('/categories', function(req,res) {
     // Catch new values from form submission
     var body = req.body;
     var category = body.category;
@@ -229,7 +232,7 @@ app.post('/user/category', function(req,res) {
      // and then save that into the UserCategory db so that this information
      // can be quickly accessed at a later point
      if (category) {
-        console.log("POST /user category: " + category);
+        console.log("POST /categories: " + category);
 
         // First, look up the category ...
         db.Category.findAll( {where: {name: category}} )
@@ -276,10 +279,13 @@ app.post('/user/category', function(req,res) {
 });
 
 // Form for adding locations
-app.get('/user/location', function(req,res) {
+app.get('/locations', function(req,res) {
     if (req.session.userId) {
 
-
+        db.UserLocation.all()
+            .then(function(dbLocations) {
+                res.render('locations', {locations: dbLocations});
+            });
 
     } else { // Checking for session
         res.redirect('/login');
@@ -287,18 +293,17 @@ app.get('/user/location', function(req,res) {
 });
 
 // Submission of changes to locations
-app.post('/user/location', function(req,res) {
+app.post('/locations', function(req,res) {
     // Catch new values from form submission
     var body = req.body;
     var location = body.location;
-
 
     // If there is a submission, add it to the db for the
     // current session user
     if (location) {
         // The first step is to convert that location string
         // into a location ID with an API call
-        console.log("POST /user location: " + location);
+        console.log("POST /location: " + location);
 
         // For now, we will hardcode San Francisco as the
         // location.  If time does not permit a better solution,

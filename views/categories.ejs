@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- The above 3 meta tags *must* come first in the head; 
+    any other head content must come *after* these tags -->
+
+    <!-- Bootstrap -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <!-- Custom styles for this template -->
+    <link href="signin.css" rel="stylesheet">
+
+	<!-- When I started this project, I had certain preconceived
+	notions about what it would be like to interface with this
+	API.  As it turns out, most of those notions were wrong.
+	To help remedy the problems that the API has created, I
+	need to utilize a typeahead search widget which I found
+	at http://www.runningcoder.org/, which utilizes jQuery
+	and some custom JavaScript and CSS to help the user to
+	constrain their location and category sources to those
+	which are permitted. -->
+
+	<!-- Note: For some reason, despite claims that they have fixed
+	the problem, the typeahead code converted all options to
+	lowercase.  I had to figure out where in their code they
+	were doing this, because sequelize (to my knowledge) does
+	not permit case-insensitive searching.  I found this code
+	at lines 552 and 553 of jquery.typeahead.js, so I changed
+	them accordingly:
+
+	_display = result.display //.toLowerCase();
+	_query = query //.toLowerCase(); -->
+
+	<!-- Optional Typeahead Search CSS -->
+    <link rel="stylesheet" href="jquery.typeahead.css">
+ 
+    <!-- Required Typeahead JavaScript -->
+    <script src="jquery-2.1.3.min.js"></script>
+    <script src="jquery.typeahead.js"></script>
+
+    <!-- Custom styles for this template -->
+    <link href="signin.css" rel="stylesheet">
+
+    <!-- My own jQuery for this page -->
+    <script src="index.js"></script>
+
+	<title>Preferred Search Categories</title>
+	<!-- LATER: ADD IN EXPLICIT COMPANY SEARCHES -->
+</head>
+<body>
+
+	<div class="container">
+
+		<form class="form-signin" action="/categories" method="POST">
+			<h2 class="form-signin-heading">Always Search Categories:</h2>
+			<p class="form-signin-heading">The categories selected here will
+			be applied to all of your searches.</p>
+
+			<ul class="list-group">
+				<% categories.forEach(function(category) { %>
+				<div class="row">
+					<div class="input-group">
+						<span class="input-group-addon">
+        					<input type="checkbox" id="cat_<%= category.id %>" 
+        						name="cat_<%= category.id %>">
+        					<label for="cat_<%= category.id %>"><span 
+        						class="glyphicon glyphicon-remove-circle"></span></label>
+						</span>				
+						<li class="list-group-item"><%= category.category_name %> </li>
+					</div>
+				</div>
+				<% }) %>
+			</ul>
+
+			<div class="row">
+
+				<!-- Typeahead HTML -->
+			    <div class="typeahead-container">
+			    	<div class="input group">
+
+			            <span class="typeahead-query">
+			                <input id="category-search" name="category" type="search" 
+			                	class="form-control" placeholder="Track Additional Categories" 
+			                	autocomplete="off">
+			            </span>
+
+			        </div>
+			    </div>
+
+			</div>
+
+			<br>
+			<div class="row">
+				<button class="btn btn-lg btn-primary btn-block" class="typeahead-button" 
+					type="submit">Submit Changes</button>
+			</div>
+		</form>
+
+    </div> <!-- /container -->
+
+</body>
+</html>
