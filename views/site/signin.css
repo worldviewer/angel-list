@@ -64,3 +64,8 @@ body {
 #search-results {
   vertical-align: center;
 }
+
+#login-error {
+  text-align: center;
+  margin-top: 10px;
+}

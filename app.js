@@ -113,7 +113,11 @@ app.use('/', function(req, res, next) {
 // be to redirect to the user's /list route; otherwise, 
 // redirect to login
 app.get('/', function (req, res) {
-	res.send('Homepage');
+	if (req.session.userId) {
+        res.redirect('/list');
+    } else { // Check for session
+        res.redirect('/login');
+    }
 });
 
 // USER LOGIN AND SIGNUP ROUTES
@@ -144,7 +148,7 @@ app.post('/signup', function(req, res) {
 // There should be a link on this page to the /signup route
 // just in case user has no account
 app.get('/login', function (req, res) {
-	res.render('login');
+	res.render('login', {error: null});
 });
 
 // If user authenticates, send them to the /profile route;
@@ -165,7 +169,8 @@ app.post('/login', function(req, res) {
         // not produce a user, then just redirect to the
         // login route
         } else {
-            res.redirect('/login');
+            var msg = "Not a valid email or password.";
+            res.render('login', {error: msg});
         }
     });
 });
@@ -173,14 +178,15 @@ app.post('/login', function(req, res) {
 // Provide a form from which locations and company categories
 // can be selected
 app.get('/user', function(req,res) {
-    console.log("GET /user");
+    if (req.session.userId) {
 
-   	console.log("req.session.userId: " + req.session.userId);
+        console.log("GET /user");
+       	console.log("req.session.userId: " + req.session.userId);
 
-	// and locations, so I'll use a promise inside of a
-	// promise, and not render until both have returned:
-	db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
- 	 		.then(function(dbCategories) {
+    	// and locations, so I'll use a promise inside of a
+    	// promise, and not render until both have returned:
+    	db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
+   	 		.then(function(dbCategories) {
  	 			console.log("Categories for a particular user:")
                 console.log(dbCategories);
 
@@ -195,6 +201,9 @@ app.get('/user', function(req,res) {
 
 	 	 	}); // End of Category Promise
 
+    } else { // Checking for session
+        res.redirect('/login');
+    }
 });
 
 // Accept lists of locations and categories to pay attention to
@@ -206,28 +215,31 @@ app.post('/user', function(req,res) {
     var location = body.location;
     var category = body.category;
 
-    // Handle location deletions
-    for(var i=1; i<11; i++) {
+    var locationDeletions = [];
+    var categoryDeletions = [];
+
+    // Identify location & category deletions
+    for(var i=1; i<101; i++) {
         if (body.hasOwnProperty('spot_'+i)) {
-
-            db.UserLocation.destroy({where: {id: i}})
-                .then(function(dbResult) {
-                    console.log(dbResult);
-                });
-
+            locationDeletions.push(i);
+        }
+        if (body.hasOwnProperty('cat_'+i)) {
+            categoryDeletions.push(i);
         }
     }
 
-    // Handle category deletions
-    for(var i=1; i<101; i++) {
-        if (body.hasOwnProperty('cat_'+i)) {
+    if(locationDeletions.length > 0) {
+        db.UserLocation.destroy({where: {id: locationDeletions}})
+            .then(function(dbResult) {
+                console.log(dbResult);
+            });
+    }
 
-            db.UserCategory.destroy({where: {id: i}})
-                .then(function(dbResult) {
-                    console.log(dbResult);
-                });
-
-        }
+    if(categoryDeletions.length > 0) {
+        db.UserCategory.destroy({where: {id: categoryDeletions}})
+            .then(function(dbResult) {
+                console.log(dbResult);
+            });
     }
 
     // If there is a submission, add it to the db for the
@@ -257,20 +269,14 @@ app.post('/user', function(req,res) {
      if (category) {
     	console.log("POST /user category: " + category);
 
-        // First, look up the category ... For now, select the first match
-        // LATER: PERFORM A FUZZY SEARCH ON THIS DB +
-        // FIX CASE-SENSITIVITY ISSUE (as is, all searches should involve
-        // capitalized words in order to get a match)
+        // First, look up the category ...
         db.Category.findAll( {where: {name: category}} )
             .then(function(dbCategories) {
 
-                // For now, if the query does not return anything, then
-                // just go back to the /user page
-                // LATER: TELL USER NO MATCH
-                if (!dbCategories) {
-                    console.log("No category of this name was found!");
-                    res.redirect('/user');
-                }
+                // if (!dbCategories) {
+                //     console.log("No category of this name was found!");
+                //     res.redirect('/user');
+                // }
 
                 console.log(dbCategories);
 
@@ -289,7 +295,8 @@ app.post('/user', function(req,res) {
 
                     // If that happens, then create the new category for 
                     // a specific user
-                    db.UserCategory.create({user_id: req.session.userId, category_name: dbCategory.name, 
+                    db.UserCategory.create({user_id: req.session.userId,
+                        category_name: dbCategory.name, 
                         category_path: dbCategory.path,
                         category_uuid: dbCategory.uuid})
                         .then(function(dbResult) {
@@ -316,9 +323,15 @@ app.post('/user', function(req,res) {
 // User should be able to maintain a particular list of companies
 // to track over time
 app.get('/companies', function (req, res) {
-	req.currentUser().then(function(user) {
-		res.send("User: " + user.email);
-	});
+    if (req.session.userId) {
+
+    	req.currentUser().then(function(user) {
+    		res.send("User: " + user.email);
+    	});
+
+    } else { // Check for session
+        res.redirect('/login');
+    }
 });
 
 // Add a new company to the track list
@@ -330,9 +343,15 @@ app.post('/companies', function (req, res) {
 
 // View details for a particular company
 app.get('/company/:id', function (req, res) {
-	var company = req.params.id;
+    if (req.session.userId) {
 
-	res.render('company', {companyId: company});
+    	var company = req.params.id;
+
+    	res.render('company', {companyId: company});
+
+    } else { // Check for session
+        res.redirect('/login');
+    }
 });
 
 // Delete company from track list
@@ -347,26 +366,30 @@ app.delete('/company/:id', function (req, res) {
 // Brings up search page, from which the user can spawn
 // a call to the CrunchBase API
 app.get('/search', function (req, res) {
+    if (req.session.userId) {
 
-    // The search page requires db queries for both categories
-    // and locations, so I'll use a promise inside of a
-    // promise, and not render until both have returned:
-    db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
-            .then(function(dbCategories) {
-                console.log("Categories for a particular user:")
-                console.log(dbCategories);
+        // The search page requires db queries for both categories
+        // and locations, so I'll use a promise inside of a
+        // promise, and not render until both have returned:
+        db.UserCategory.findAll( {where: {user_id: req.session.userId}} )
+                .then(function(dbCategories) {
+                    console.log("Categories for a particular user:")
+                    console.log(dbCategories);
 
-                db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
-                        .then(function(dbLocations) {
+                    db.UserLocation.findAll( {where: {user_id: req.session.userId}} )
+                            .then(function(dbLocations) {
 
-                            res.render('search', 
-                                {locations: dbLocations,
-                                 categories: dbCategories});
+                                res.render('search', 
+                                    {locations: dbLocations,
+                                     categories: dbCategories});
 
-                        }); // End of Location Promise
+                            }); // End of Location Promise
 
-            }); // End of Category Promise
+                }); // End of Category Promise
 
+    } else { // Check for session
+        res.redirect('/login');
+    }
 });
 
 // This is where the CrunchBase API call goes; should

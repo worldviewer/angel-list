@@ -91,11 +91,19 @@ module.exports = function (sequelize, DataTypes) {
                 })
 
                 .then (function(user) {
-                  if (user === null) {
-                    throw new Error("Email does not exist");
-                  } else if (user.checkPassword(password)) {
-                    return user;
-                  }
+
+                    // Incorrect User
+                    if (user === null) {
+                        console.log("Invalid User Email");
+
+                    // Proper!
+                    } else if (user.checkPassword(password)) {
+                        return user;
+
+                    // Incorrect Password
+                    } else {
+                        console.log("Invalid Password");
+                    }
 
                 });
             }   

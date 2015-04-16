@@ -10,8 +10,18 @@
     <!-- Bootstrap -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
+	<!-- Optional Typeahead Search CSS -->
+    <link rel="stylesheet" href="jquery.typeahead.css">
+ 
+    <!-- Required Typeahead JavaScript -->
+    <script src="jquery-2.1.3.min.js"></script>
+    <script src="jquery.typeahead.js"></script>
+
     <!-- Custom styles for this template -->
     <link href="signin.css" rel="stylesheet">
+
+    <!-- My own jQuery for this page -->
+    <script src="index.js"></script>
 
 	<title>Angel Search</title>
 </head>
@@ -38,11 +48,22 @@
 
 			<br>
 
-			<h2 class="form-signin-heading">Filter by Funding Stage</h2>
+			<!-- Typeahead HTML -->
+		    <div class="typeahead-container">
+		    	<div class="input group">
 
-			<h2 class="form-signin-heading">Filter by Funding</h2>
+		            <span class="typeahead-query">
+		                <input id="category-search" name="category" type="search" class="form-control" placeholder="Constrain Category Search" autocomplete="off">
+		            </span>
 
-			<button class="btn btn-lg btn-primary btn-block" type="submit">Submit</button>
+		        </div>
+		    </div>
+
+			<br>
+
+			<div id="submit-button" class="form-signin-heading">
+				<button class="btn btn-lg btn-primary btn-block" type="submit" class="typeahead-button">Submit</button>
+			</div>
 
 		</form>
 
