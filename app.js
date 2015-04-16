@@ -206,68 +206,30 @@ app.get('/user', function(req,res) {
     }
 });
 
-// Accept lists of locations and categories to pay attention to
-app.post('/user', function(req,res) {
-    console.log("POST /user");
+// Form for adding categories
+app.get('/user/category', function(req,res) {
+    if (req.session.userId) {
 
+
+
+    } else { // Checking for session
+        res.redirect('/login');
+    }
+});
+
+// Submission of changes to categories
+app.post('/user/category', function(req,res) {
     // Catch new values from form submission
     var body = req.body;
-    var location = body.location;
     var category = body.category;
 
-    var locationDeletions = [];
-    var categoryDeletions = [];
-
-    // Identify location & category deletions
-    for(var i=1; i<101; i++) {
-        if (body.hasOwnProperty('spot_'+i)) {
-            locationDeletions.push(i);
-        }
-        if (body.hasOwnProperty('cat_'+i)) {
-            categoryDeletions.push(i);
-        }
-    }
-
-    if(locationDeletions.length > 0) {
-        db.UserLocation.destroy({where: {id: locationDeletions}})
-            .then(function(dbResult) {
-                console.log(dbResult);
-            });
-    }
-
-    if(categoryDeletions.length > 0) {
-        db.UserCategory.destroy({where: {id: categoryDeletions}})
-            .then(function(dbResult) {
-                console.log(dbResult);
-            });
-    }
-
-    // If there is a submission, add it to the db for the
-    // current session user
-    if (location) {
-    	// The first step is to convert that location string
-    	// into a location ID with an API call
-    	console.log("POST /user location: " + location);
-
-    	// For now, we will hardcode San Francisco as the
-    	// location.  If time does not permit a better solution,
-    	// I can just stick to the region.
-    	var SFCity = '528f5e3c90d111115d1c2e4ff979d58e';
-    	var SFRegion = 'eb879a83c91a121e0bb8829782dbcf04';
-    	var SFLocation = 'San Francisco Region';
-
-		db.UserLocation.create({user_id: req.session.userId, location_id: SFRegion, name: SFLocation})
-		  	.then(function(dbResult) {
-		  		console.log(dbResult);
-		  	});
-     }
 
      // If a category is added within the submitted form, then look up all
      // of the categories' associated data -- namely, the path and uuid --
      // and then save that into the UserCategory db so that this information
      // can be quickly accessed at a later point
      if (category) {
-    	console.log("POST /user category: " + category);
+        console.log("POST /user category: " + category);
 
         // First, look up the category ...
         db.Category.findAll( {where: {name: category}} )
@@ -311,15 +273,115 @@ app.post('/user', function(req,res) {
             }); // End of db.Category promise
      } // End of category submission
 
-     // If the page hasn't been redirected by now, then do it
-     // WARNING: THIS CREATES A SITUATION WHERE THE PAGE DOES NOT
-     // PROPERLY UPDATE AFTER ALL CHANGES HAVE BEEN MADE ... GOING
-     // TO MOVE ON FOR NOW ...
-     res.redirect('/user');
+});
+
+// Form for adding locations
+app.get('/user/location', function(req,res) {
+    if (req.session.userId) {
+
+
+
+    } else { // Checking for session
+        res.redirect('/login');
+    }
+});
+
+// Submission of changes to locations
+app.post('/user/location', function(req,res) {
+    // Catch new values from form submission
+    var body = req.body;
+    var location = body.location;
+
+
+    // If there is a submission, add it to the db for the
+    // current session user
+    if (location) {
+        // The first step is to convert that location string
+        // into a location ID with an API call
+        console.log("POST /user location: " + location);
+
+        // For now, we will hardcode San Francisco as the
+        // location.  If time does not permit a better solution,
+        // I can just stick to the region.
+        var SFCity = '528f5e3c90d111115d1c2e4ff979d58e';
+        var SFRegion = 'eb879a83c91a121e0bb8829782dbcf04';
+        var SFLocation = 'San Francisco Region';
+
+        db.UserLocation.create({user_id: req.session.userId, location_id: SFRegion, name: SFLocation})
+            .then(function(dbResult) {
+                console.log(dbResult);
+            });
+     }
+
+});
+
+// dbDestroy receives either a redirectTo or a callback
+function dbDestroy(database, idArray, redirectTo, callback) {
+
+    // If there is something to delete
+    if(idArray.length > 0) {
+        database.destroy({where: {id: idArray}})
+            .then(function(dbResult) {
+                console.log(dbResult);
+
+                // If a redirect is given
+                if (redirectTo) {
+                    res.redirect(redirectTo);
+                } else if (callback) {
+                    callback();
+                }
+            });
+    }
+
+}
+
+// Process deletions for either categories or locations
+app.delete('/user', function(req,res) {
+
+    // Catch new values from form submission
+    var body = req.body;
+
+    var locationDeletions = [];
+    var categoryDeletions = [];
+
+    // Identify location & category deletions
+    for(var i=1; i<101; i++) {
+        if (body.hasOwnProperty('spot_'+i)) {
+            locationDeletions.push(i);
+        }
+        if (body.hasOwnProperty('cat_'+i)) {
+            categoryDeletions.push(i);
+        }
+    }
+
+    // This is awkward, but I don't see any better way to avoid creating
+    // two separate deletion pages, which seems to me to be adapting
+    // the design to the programming language ...
+    
+    // If there is a deletion in both, then check one at a time, so that
+    // we don't have to create two competing promises
+    if((locationDeletions.length > 0) && (categoryDeletions.length > 0)) {
+
+        // Since we are operating on two different db's, we have
+        // to nest the call to the 2nd inside the return of the 1st
+        dbDestroy(db.UserLocations, locationDeletions, null, 
+                dbDestroy(db.UserCategories, categoryDeletions, '/user');
+            );
+
+    // If just location deletions
+    } else if (locationDeletions.length > 0) {
+        dbDestroy(db.UserLocations, locationDeletions, '/user')
+        res.redirect(redirectTo);
+
+    // If just category deltions
+    } else if (categoryDeletions.length > 0) {
+        dbDestroy(db.UserCategories, categoryDeletions, '/user')
+        res.redirect(redirectTo);
+
+    }
 });
 
 // COMPANY ROUTES: THIS IS NOT A NECESSARY FEATURE FOR MVP
-
 // User should be able to maintain a particular list of companies
 // to track over time
 app.get('/companies', function (req, res) {
