@@ -374,9 +374,7 @@ app.delete('/locations/:id', function(req,res) {
 app.get('/companies', function (req, res) {
     if (req.session.userId) {
 
-    	req.currentUser().then(function(user) {
-    		res.send("User: " + user.email);
-    	});
+
 
     } else { // Check for session
         res.redirect('/login');
@@ -385,9 +383,17 @@ app.get('/companies', function (req, res) {
 
 // Add a new company to the track list
 app.post('/companies', function (req, res) {
-//	var newCompany = req.body.company;
+	// var newCompanyPath = req.body.company_path;
+ //    var newCompanyName = req.body.company_name;
 
-	res.send("Create new company in list");
+ //    if (newCompany) {
+ //        db.UserCompany.create({user_id: req.session.userId, 
+ //            company_path: newCompany, company_name: })
+ //            .then(function() {
+
+ //            });
+ //    }
+
 });
 
 // View details for a particular company
