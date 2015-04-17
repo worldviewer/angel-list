@@ -77,3 +77,11 @@ body {
 .delete {
   list-style-type: none;
 }
+
+.list-group-item:first-child {
+  border-top-right-radius: 4px;
+}
+
+.row .input-group .list-group-item {
+  border-bottom-right-radius: 4px;
+}
