@@ -148,6 +148,7 @@ app.post('/signup', function(req, res) {
 // There should be a link on this page to the /signup route
 // just in case user has no account
 app.get('/login', function (req, res) {
+    req.logout();
 	res.render('login', {error: null});
 });
 
